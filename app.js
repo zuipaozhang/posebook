@@ -105,6 +105,22 @@
   function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(state.cfg)); }
   function hasCfg() { return !!(state.cfg.owner && state.cfg.repo && state.cfg.pat); }
 
+  // 从 URL hash 恢复配置（#cfg=...）：即使浏览器不保留任何数据也能自动连接
+  function applyHashConfig() {
+    try {
+      const m = location.hash.match(/cfg=([^&]+)/);
+      if (!m) return false;
+      const obj = JSON.parse(b64ToUtf8(decodeURIComponent(m[1])));
+      if (!obj.owner || !obj.repo || !obj.pat) return false;
+      state.cfg.owner = obj.owner;
+      state.cfg.repo = obj.repo;
+      state.cfg.pat = obj.pat;
+      if (obj.branch) state.cfg.branch = obj.branch;
+      saveCfg();
+      return true;
+    } catch { return false; }
+  }
+
   // ---------- GitHub API ----------
   function apiError(status, msg) {
     const e = new Error(msg);
@@ -955,6 +971,67 @@
       e.target.value = "";
     });
 
+    // 配置防丢失：复制 / 粘贴恢复
+    $("btn-copy-cfg").addEventListener("click", () => {
+      if (!hasCfg()) { toast("请先填写并保存配置", "warn"); return; }
+      const text = "posebookcfg:" + utf8ToB64(JSON.stringify({
+        owner: state.cfg.owner, repo: state.cfg.repo, pat: state.cfg.pat, branch: state.cfg.branch || "",
+      }));
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => toast("配置已复制 ✅ 请存入手机备忘录或文件传输助手（含令牌，勿外传）"),
+          () => prompt("复制这段配置（含令牌，勿外传）：", text)
+        );
+      } else {
+        prompt("复制这段配置（含令牌，勿外传）：", text);
+      }
+    });
+    $("btn-cfg-link").addEventListener("click", () => {
+      if (!hasCfg()) { toast("请先填写并保存配置", "warn"); return; }
+      const cfgB64 = utf8ToB64(JSON.stringify({
+        owner: state.cfg.owner, repo: state.cfg.repo, pat: state.cfg.pat, branch: state.cfg.branch || "",
+      }));
+      const link = location.origin + location.pathname + "#cfg=" + encodeURIComponent(cfgB64);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(
+          () => toast("配置链接已复制 ✅ 用它打开并重新添加到桌面（含令牌，勿外传）"),
+          () => prompt("复制配置链接（含令牌，勿外传）：", link)
+        );
+      } else {
+        prompt("复制配置链接（含令牌，勿外传）：", link);
+      }
+    });
+    $("btn-restore-cfg").addEventListener("click", () => {
+      $("restore-box").classList.toggle("hidden");
+    });
+    $("btn-apply-cfg").addEventListener("click", async () => {
+      const raw = $("restore-text").value.trim();
+      if (!raw) { toast("请先粘贴配置文本", "warn"); return; }
+      let obj;
+      try {
+        const s = raw.startsWith("posebookcfg:") ? raw.slice("posebookcfg:".length) : raw;
+        obj = JSON.parse(b64ToUtf8(s));
+      } catch {
+        toast("配置格式不正确，请重新复制", "error");
+        return;
+      }
+      if (!obj.owner || !obj.repo || !obj.pat) { toast("配置内容不完整", "error"); return; }
+      state.cfg.owner = obj.owner;
+      state.cfg.repo = obj.repo;
+      state.cfg.pat = obj.pat;
+      if (obj.branch) state.cfg.branch = obj.branch;
+      saveCfg();
+      const ok = await testConn(false);
+      if (ok) {
+        toast("配置已恢复并连接成功 ✅");
+        $("restore-box").classList.add("hidden");
+        $("restore-text").value = "";
+        try { await loadData(true); renderAll(); } catch {}
+      } else {
+        toast("恢复成功但连接测试失败，请检查配置", "error");
+      }
+    });
+
     // 窗口聚焦时静默刷新
     window.addEventListener("focus", () => refreshIfStale());
   }
@@ -965,6 +1042,7 @@
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }
     bindEvents();
+    applyHashConfig(); // URL 自带配置时自动应用（不依赖浏览器存储）
     if (!hasCfg()) {
       $("setup-overlay").classList.remove("hidden");
       return;
