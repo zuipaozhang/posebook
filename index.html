@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1116">
+  <meta name="description" content="收藏好看照片，按服饰/场景/动作/角度/构图/光线打标签，拍摄时快速检索姿势参考。">
+  <title>灵感图库 · 拍照姿势参考</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 首次配置引导 -->
+  <div id="setup-overlay" class="hidden">
+    <div class="setup-card">
+      <div class="setup-logo">📸</div>
+      <h2>欢迎使用 灵感图库</h2>
+      <p class="setup-step">① 在 GitHub 创建一个<strong>公开仓库</strong>（如 <code>posebook</code>）</p>
+      <p class="setup-step">② 生成一个<strong>受限访问令牌</strong>（Settings → Developer settings → Fine-grained tokens，只授权该仓库 Contents 读写）</p>
+      <p class="setup-step">③ 点击下方"去设置"，填入 用户名 / 仓库名 / 令牌</p>
+      <p class="setup-hint">详细图文步骤见仓库里的 <code>README.md</code></p>
+      <button id="btn-goto-settings" class="btn primary">去设置</button>
+    </div>
+  </div>
+
+  <!-- 顶栏 -->
+  <header id="topbar">
+    <div class="brand">📸 灵感图库</div>
+    <div id="conn-status" class="conn" title="数据仓库连接状态">未连接</div>
+  </header>
+
+  <!-- ============ 视图：图库 ============ -->
+  <main id="view-library" class="view">
+    <section id="lib-toolbar">
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="搜索标签 / 备注… 如：明制汉服" autocomplete="off">
+      </div>
+      <div class="toolbar-row">
+        <button id="btn-toggle-filters" class="btn ghost small">🏷 筛选标签 <span id="filter-count" class="badge hidden"></span></button>
+        <select id="sort" class="select small" title="排序">
+          <option value="recent">最近添加</option>
+          <option value="rating">评分优先</option>
+        </select>
+        <span id="lib-count" class="count"></span>
+      </div>
+      <div id="filter-panel" class="hidden">
+        <div id="tag-groups"></div>
+        <div class="filter-actions">
+          <button id="btn-clear-filters" class="btn ghost small">清除筛选</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="grid" class="grid"></div>
+
+    <div id="lib-empty" class="empty hidden">
+      <div class="empty-icon">🖼</div>
+      <p>还没有照片</p>
+      <p class="empty-sub">点下方「上传」把你觉得好看的照片存进来，打上标签，拍摄前就能随时检索姿势参考啦</p>
+    </div>
+    <div id="lib-loading" class="loading hidden">加载中…</div>
+    <div id="load-more" class="hidden"></div>
+  </main>
+
+  <!-- ============ 视图：上传 ============ -->
+  <main id="view-upload" class="view hidden">
+    <section class="upload-card">
+      <button id="btn-pick" class="btn primary big">＋ 选择照片</button>
+      <p class="upload-hint">可从相册多选；图片会自动压缩后存入你的仓库</p>
+      <input type="file" id="file-input" accept="image/*" multiple hidden>
+      <div id="upload-preview" class="up-grid"></div>
+    </section>
+
+    <section id="upload-tag-section" class="upload-card hidden">
+      <h3>给这些照片打标签</h3>
+      <p class="upload-hint">以下标签会应用到本次选择的全部照片，之后可单张修改</p>
+      <div id="upload-tag-groups"></div>
+      <div class="upload-meta">
+        <div class="field">
+          <label>评分（可选）</label>
+          <div id="upload-stars" class="stars" data-value="0">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>来源（可选）</label>
+          <input id="upload-source" type="text" placeholder="如：小红书 / 微博 / 自己拍的" list="source-list">
+          <datalist id="source-list">
+            <option value="小红书"></option><option value="微博"></option><option value="抖音"></option>
+            <option value="Pinterest"></option><option value="图虫"></option><option value="自己拍的"></option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label>备注（可选）</label>
+          <textarea id="upload-notes" rows="2" placeholder="拍摄要点，如：注意手部与扇子的互动"></textarea>
+        </div>
+      </div>
+      <button id="btn-upload" class="btn primary big" disabled>上传到图库</button>
+      <div id="upload-progress" class="progress hidden">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <span id="progress-text"></span>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ 视图：设置 ============ -->
+  <main id="view-settings" class="view hidden">
+    <section class="settings-card">
+      <h3>GitHub 连接</h3>
+      <div class="field">
+        <label>GitHub 用户名</label>
+        <input id="set-owner" type="text" placeholder="你的 GitHub 用户名">
+      </div>
+      <div class="field">
+        <label>仓库名</label>
+        <input id="set-repo" type="text" placeholder="如 posebook">
+      </div>
+      <div class="field">
+        <label>访问令牌（Fine-grained PAT，仅授权该仓库 Contents 读写）</label>
+        <input id="set-pat" type="password" placeholder="github_pat_…">
+      </div>
+      <div class="btn-row">
+        <button id="btn-save-cfg" class="btn primary">保存</button>
+        <button id="btn-test-cfg" class="btn ghost">测试连接</button>
+      </div>
+      <p id="cfg-status" class="cfg-status"></p>
+    </section>
+
+    <section class="settings-card">
+      <h3>备份与数据</h3>
+      <p class="upload-hint">你的照片和标签都存在自己的 GitHub 仓库里。这里可以下载/恢复标签数据。</p>
+      <div class="btn-row">
+        <button id="btn-export" class="btn ghost">导出备份（JSON）</button>
+        <button id="btn-import" class="btn ghost">导入备份</button>
+        <input type="file" id="import-input" accept=".json,application/json" hidden>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <h3>使用说明</h3>
+      <ol class="help-list">
+        <li><strong>收藏</strong>：看到好看的照片 → 「上传」→ 选图 → 点标签 → 上传。图片自动压缩存入你的 GitHub 仓库。</li>
+        <li><strong>打标</strong>：按 服饰 / 场景 / 动作 / 角度 / 构图 / 光线 六维点选，也可以在大图里改。</li>
+        <li><strong>检索</strong>：搜索关键词，或点「筛选标签」组合多个标签（如 明制汉服 + 古建），拍摄前快速看姿势参考。</li>
+        <li><strong>原图备份</strong>：仓库存的是压缩参考图；原图建议按主题存到百度网盘。</li>
+        <li><strong>多设备</strong>：同一时间尽量只用一台设备打标，避免标签互相覆盖。</li>
+      </ol>
+    </section>
+  </main>
+
+  <!-- 底部导航 -->
+  <nav id="tabbar">
+    <button class="tab active" data-view="library"><span class="tab-ico">🗂</span><span>图库</span></button>
+    <button class="tab" data-view="upload"><span class="tab-ico">⬆️</span><span>上传</span></button>
+    <button class="tab" data-view="settings"><span class="tab-ico">⚙️</span><span>设置</span></button>
+  </nav>
+
+  <!-- 大图查看/编辑弹层 -->
+  <div id="lightbox" class="hidden">
+    <div id="lb-backdrop" class="lb-backdrop" data-lb-close></div>
+    <div class="lb-shell">
+      <div class="lb-img-wrap">
+        <img id="lb-img" alt="参考图">
+        <button id="lb-prev" class="lb-nav left" title="上一张">‹</button>
+        <button id="lb-next" class="lb-nav right" title="下一张">›</button>
+        <button id="lb-close" class="lb-close" data-lb-close title="关闭">✕</button>
+        <div id="lb-counter" class="lb-counter"></div>
+      </div>
+      <div class="lb-info">
+        <div class="lb-head">
+          <div id="lb-stars" class="stars"></div>
+          <button id="lb-delete" class="btn danger small">删除</button>
+        </div>
+        <div class="field">
+          <label>标签（点选六维，可多选）</label>
+          <div id="lb-tag-groups"></div>
+        </div>
+        <div class="field">
+          <label>备注</label>
+          <textarea id="lb-notes" rows="2" placeholder="拍摄要点…"></textarea>
+        </div>
+        <div class="lb-foot">
+          <input id="lb-source" type="text" placeholder="来源">
+          <span id="lb-saved" class="saved-hint"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toasts"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

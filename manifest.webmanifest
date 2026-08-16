@@ -1,0 +1,18 @@
+{
+  "name": "灵感图库 · 拍照姿势参考",
+  "short_name": "灵感图库",
+  "description": "收藏好看的照片，按服饰/场景/动作/角度/构图/光线打标签，拍摄时快速检索姿势参考。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "lang": "zh-CN",
+  "categories": ["photo", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
