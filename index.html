@@ -138,6 +138,21 @@
         <button id="btn-import" class="btn ghost">导入备份</button>
         <input type="file" id="import-input" accept=".json,application/json" hidden>
       </div>
+      <div class="field" style="margin-top:14px">
+        <label>配置防丢失（浏览器清理数据后 5 秒找回）</label>
+        <div class="btn-row">
+          <button id="btn-copy-cfg" class="btn ghost">复制配置</button>
+          <button id="btn-restore-cfg" class="btn ghost">粘贴恢复</button>
+          <button id="btn-cfg-link" class="btn ghost">生成配置链接</button>
+        </div>
+        <p class="upload-hint">「复制配置」：存备忘录，丢失后「粘贴恢复」；<br>「生成配置链接」：链接自带配置，用它打开并重新添加到桌面，之后不保留浏览器记录也不怕。</p>
+        <div id="restore-box" class="hidden">
+          <textarea id="restore-text" rows="2" placeholder="粘贴配置文本…"></textarea>
+          <div class="btn-row" style="margin-top:8px">
+            <button id="btn-apply-cfg" class="btn primary small">应用配置</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="settings-card">
