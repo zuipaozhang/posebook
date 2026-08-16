@@ -7,6 +7,7 @@
   // ---------- 常量 ----------
   const CFG_KEY = "posebook.cfg.v1";
   const CACHE_KEY = "posebook.data.v1";
+  const VERSION = "v1.2";
   const DATA_PATH = "data/tags.json";
   const PAGE_SIZE = 60;
   const API = "https://api.github.com";
@@ -1042,6 +1043,8 @@
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }
     bindEvents();
+    const verEl = $("app-version");
+    if (verEl) verEl.textContent = "当前版本：" + VERSION;
     applyHashConfig(); // URL 自带配置时自动应用（不依赖浏览器存储）
     if (!hasCfg()) {
       $("setup-overlay").classList.remove("hidden");
