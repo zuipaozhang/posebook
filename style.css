@@ -186,7 +186,7 @@ textarea { resize: vertical; }
 }
 .settings-card h3 { margin: 0 0 10px; font-size: 16px; }
 .settings-card .field { margin-bottom: 10px; }
-.btn-row { display: flex; gap: 8px; margin-top: 6px; }
+.btn-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .cfg-status { font-size: 13px; margin-top: 8px; min-height: 18px; }
 .cfg-status.ok { color: var(--ok); }
 .cfg-status.err { color: var(--danger); }
